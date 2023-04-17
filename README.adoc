@@ -1,1 +1,120 @@
 = ansible
+:scripts: cjk
+:toc:
+:toc-title: 目录
+:toclevels: 4
+
+== 简介
+集成了jupyter的ansible镜像
+
+== 特性
+* alpine
+* ansible
+* jupyter
+
+
+== 编译并上传镜像
+
+[,shell]
+----
+docker buildx build --platform linux/arm64/v8,linux/amd64 -t nnzbz/ansible:latest . --push
+----
+
+== 部署
+[,shell]
+----
+# 宿主机生成密钥对
+ssh-keygen
+....
+----
+
+[,shell]
+----
+# 创建部署目录
+mkdir -p /usr/local/ansible/{data,conf}
+----
+
+[,shell]
+----
+# 编辑ansible的主机配置文件
+vi /usr/local/ansible/conf/hosts
+----
+
+./usr/local/ansible/conf/hosts
+[,ini]
+----
+[hosts]
+172.17.0.1
+....
+----
+
+// [,shell]
+// ----
+// # 编辑ansible的配置文件
+// vi /usr/local/ansible/conf/ansible.cfg
+// ----
+
+// ./usr/local/ansible/conf/ansible.cfg
+// [,ini]
+// ----
+// host_key_checking = False
+// ----
+
+// [,shell]
+// ----
+// # 编辑jupyter的配置文件
+// vi /usr/local/ansible/conf/jupyter_notebook_config.py
+// ----
+
+// ./usr/local/ansible/conf/jupyter_notebook_config.py
+// [,ini]
+// ----
+// # c.NotebookApp.base_url = '/sub_path/'
+// ----
+
+[,shell]
+----
+# 编辑部署文件
+vi /usr/local/ansible/stack.yml
+----
+
+./usr/local/ansible/stack.yml
+[,yaml]
+----
+version: "3.9"
+services:
+  svr:
+    image: nnzbz/ansible
+    init: true
+    ports:
+      - 8888:8888
+    environment:
+      # ssh时不提示unkown host
+      - ANSIBLE_HOST_KEY_CHECKING=False
+      # 子路径
+      # - BASE_URL=/sub_path/
+      # 运行jupyter命令的参数
+      # - CMD_ARGS=...
+    volumes:
+      # 共享密钥
+      - /root/.ssh/:/root/.ssh/:z
+      # 配置文件
+      # - /usr/local/ansible/conf/ansible.cfg:/etc/ansible/ansible.cfg:z
+      - /usr/local/ansible/conf/hosts:/etc/ansible/hosts:z
+      # - /usr/local/ansible/conf/jupyter_notebook_config.py:/root/.jupyter/jupyter_notebook_config.py:z
+      # notebook文件夹
+      - /usr/local/ansible/data/:/usr/local/ansible/data/:z
+    logging:
+      options:
+        max-size: 8m
+networks:
+  default:
+    external: true
+    name: rebue
+----
+
+[,shell]
+----
+# 部署
+docker compose -f /usr/local/ansible/stack.yml up -d
+----
