@@ -44,7 +44,7 @@ RUN echo '#!/bin/sh' >> entrypoint.sh
 RUN echo 'set +e' >> entrypoint.sh
 RUN echo 'CMD="jupyter notebook --ip=0.0.0.0 --no-browser --allow-root --notebook-dir=${WORKDIR}/data --NotebookApp.base_url=${BASE_URL} ${CMD_ARGS}"' >> entrypoint.sh
 RUN echo 'echo $CMD' >> entrypoint.sh
-RUN echo '$CMD' >> entrypoint.sh
+RUN echo 'exec $CMD' >> entrypoint.sh
 
 # 授权执行
 RUN chmod +x ./entrypoint.sh
